@@ -2,7 +2,8 @@
 #define UTILITY_H
 
 #include <vector>
+#include "aabb.h"
 
-void point_cloud_bounds(const std::vector<float3>& pc, float2& x_bound, float2& y_bound, float2& z_bound);
+aabb point_cloud_bounds(const std::vector<float3>& pc);
 
 #endif // UTILITY_H

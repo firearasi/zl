@@ -3,24 +3,28 @@
 #include <algorithm>
 
 // 找出点云的上下界
-void point_cloud_bounds(const std::vector<float3>& pc, float2& x_bound, float2& y_bound, float2& z_bound)
+aabb point_cloud_bounds(const std::vector<float3>& pc)
 {
-    x_bound.x=std::numeric_limits<float>::max();
-    x_bound.y=std::numeric_limits<float>::min();
-    y_bound.x=std::numeric_limits<float>::max();
-    y_bound.y=std::numeric_limits<float>::min();
-    z_bound.x=std::numeric_limits<float>::max();
-    z_bound.y=std::numeric_limits<float>::min();
+    float3 lower, upper;
+
+    lower.x=std::numeric_limits<float>::max();
+    upper.x=std::numeric_limits<float>::min();
+    lower.y=std::numeric_limits<float>::max();
+    upper.y=std::numeric_limits<float>::min();
+    lower.z=std::numeric_limits<float>::max();
+    upper.z=std::numeric_limits<float>::min();
 
     for(float3 pt: pc)
     {
-        x_bound.x=std::min(x_bound.x,pt.x);
-        x_bound.y=std::max(x_bound.y,pt.x);
+        lower.x=std::min(lower.x,pt.x);
+        upper.x=std::max(upper.x,pt.x);
 
-        y_bound.x=std::min(y_bound.x,pt.y);
-        y_bound.y=std::max(y_bound.y,pt.y);
+        lower.y=std::min(lower.y,pt.y);
+        upper.y=std::max(upper.y,pt.y);
 
-        z_bound.x=std::min(z_bound.x,pt.z);
-        z_bound.y=std::max(z_bound.y,pt.z);
+        lower.z=std::min(lower.z,pt.z);
+        upper.z=std::max(upper.z,pt.z);
     }
+
+    return aabb(lower,upper);
 }
