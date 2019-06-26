@@ -1,8 +1,9 @@
 Plot.ipynb
 aabb.cu
 aabb.h
+count3D.cu
+count3D.h
 main.cu
-main.exe
 main.h
 readfile.cu
 readfile.h
