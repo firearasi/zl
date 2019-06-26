@@ -17,14 +17,15 @@ __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, i
     //printf("Thread %2d: point(%f,%f,%f) is in cell(%d,%d,%d)\n", t,pc[t].x,pc[t].y,pc[t].z,i,j,k);
 
     int cell_index=i+j*m+k*m*n;
-    bool leave=true;
+
     //mutex
+    bool leave=true;
     while(leave)
     {
         if (0 == (atomicCAS(&mutex[cell_index],0,1)))
         {
             counts[cell_index]++;
-            printf("counts[%d,%d,%d]=%d\n", i,j,k, counts[cell_index]);
+            //printf("counts[%d,%d,%d]=%d\n", i,j,k, counts[cell_index]);
 
             leave=false;
             atomicExch(&mutex[cell_index], 0);
@@ -32,6 +33,7 @@ __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, i
     }
 }
 
+//m,n,p x,y,z上分成的小正方形
 void count3D(const std::vector<float3>pc, int m, int n,int p, int *counts)
 {
     int len = pc.size();
