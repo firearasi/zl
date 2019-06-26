@@ -16,9 +16,10 @@ __global__ void countKernel(float3 *pc, int len, float3 lower, float3 upper, int
     int k= (int)(pc[t].z-lower.z)/(upper.z-lower.z)*p;
 
     printf("Thread %2d: point(%f,%f,%f) is in cell(%d,%d,%d)\n", t,pc[t].x,pc[t].y,pc[t].z,i,j,k);
-    //__syncthreads();
+
     int cell_index=i+j*m+k*m*n;
     bool leave=true;
+    //mutex
     while(leave)
     {
         if (0 == (atomicCAS(&mutex[cell_index],0,1)))
@@ -42,13 +43,11 @@ int main()
     int m=60;
     int n=60;
     int p=60;
-    float3* point_cloud_host = (float3 *)calloc(len, sizeof(float3));
-    for(int i=0; i<len;i++)
-        point_cloud_host[i]=pc[i];
+
     float3* d_pc;
 
     cudaMalloc(&d_pc, len*sizeof(float3));
-    cudaMemcpy(d_pc, point_cloud_host, len*sizeof(float3),cudaMemcpyHostToDevice);
+    cudaMemcpy(d_pc, &pc[0], len*sizeof(float3),cudaMemcpyHostToDevice);
 
     int* counts;
     int* d_counts;
@@ -65,20 +64,19 @@ int main()
 
     cudaMemcpy(counts, d_counts, m*n*p*sizeof(int), cudaMemcpyDeviceToHost);
 
-    cudaFree(d_pc);
-    free(point_cloud_host);
-
-    cudaFree(d_counts);
 
     FILE *file=fopen("result.csv","w");
     for(int i=0;i<m;i++)
-        for(int j=0;j<m;j++)
+        for(int j=0;j<n;j++)
             for(int k=0;k<p;k++)
     {
-        fprintf(file,"%d,%d,%d,%d\n",i,j,k,counts[i]);
+        fprintf(file,"%d,%d,%d,%d\n",i,j,k,counts[i+j*m+k*m*n]);
     }
     fclose(file);
     free(counts);
+
+    cudaFree(d_pc);
+    cudaFree(d_counts);
     cudaFree(mutex);
 
     return 0;
