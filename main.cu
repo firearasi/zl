@@ -15,16 +15,21 @@ int main()
 {
     std::vector<float3> pc = read_yxz("yxz.txt");
 
-    int m=60;
-    int n=60;
-    int p=60;
+    int x0=50;
+    int y0=50;
+    int z0=50;
+
+
+    aabb box=point_cloud_bounds(pc);
+    int m=(int)(box.max().x-box.min().x)/x0+1;
+    int n=(int)(box.max().y-box.min().y)/y0+1;
+    int p=(int)(box.max().z-box.min().z)/z0+1;
 
     int* counts;
     counts=(int *)calloc(m*n*p,sizeof(int));
     count3D(pc, m, n,p, counts);
 
     printf("Writing cell distributions to cell_distribution.csv\n");
-    aabb box=point_cloud_bounds(pc);
     FILE *file=fopen("cell_distribution.csv","w");
     fprintf(file,"i,j,k,lowerX,lowerY,lowerZ,upperX,upperY,upperZ,count\n");
     for(int i=0;i<m;i++)

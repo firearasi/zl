@@ -25,7 +25,7 @@ __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, i
         if (0 == (atomicCAS(&mutex[cell_index],0,1)))
         {
             counts[cell_index]++;
-            //printf("counts[%d,%d,%d]=%d\n", i,j,k, counts[cell_index]);
+            printf("counts[%d,%d,%d]=%d\n", i,j,k, counts[cell_index]);
 
             leave=false;
             atomicExch(&mutex[cell_index], 0);
