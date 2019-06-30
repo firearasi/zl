@@ -6,17 +6,15 @@
 
 int divUp(int a, int b){return (a+b-1)/b;}
 
-__global__ void cumulatedDensityKernel(ray *r, aabb *cells, int m, int n, int p, float* d_density, int* mutex)
+__global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,float* d_density, int* mutex)
 {
-    const int i = blockIdx.x*blockDim.x+threadIdx.x;
-    const int j = blockIdx.y*blockDim.y+threadIdx.y;
-    const int k = blockIdx.z*blockDim.z+threadIdx.z;
-    const int index = i+j*m+k*m*n;
-    if((i>=m) || (j>=n) || (k>=p)) return;
+    const int index = blockIdx.x*blockDim.x+threadIdx.x;
 
-    if(cells[index].hit(*r,-FLT_MAX,FLT_MAX))
+    //printf("cumulatedDensityKernel index=%d\n",index);
+
+    if(cells[index].hit(o,d,0,FLT_MAX))
     {
-        printf("Hit!\n");
+    //    printf("Hit!\n");
         //mutex
         bool leave=true;
         while(leave)
@@ -30,29 +28,34 @@ __global__ void cumulatedDensityKernel(ray *r, aabb *cells, int m, int n, int p,
         }
     }
 }
+
+
 float render(int i, int j, int nx, int ny, camera& cam, aabb* cells, int m, int n, int p)
 {
+    //printf("render %d,%d\n",i,j);
     float u=float(i)/float(nx);
     float v=float(j)/float(ny);
-    ray* d_r=0;
-    cudaMalloc(&d_r, sizeof(ray));
-    ray r=cam.get_ray(u,v);
-    cudaMemcpy(d_r, &r,sizeof(ray), cudaMemcpyHostToDevice);
 
-    const dim3 blockSize(TX,TY,TZ);
+    ray r=cam.get_ray(u,v);
+
+   /* const dim3 blockSize(TX,TY,TZ);
     const int bx = divUp(m, TX);
     const int by = divUp(n, TY);
     const int bz = divUp(p, TZ);
-    const dim3 gridSize(bx,by,bz);
+    const dim3 gridSize(bx,by,bz);*/
     float* d_density=0;
-    cudaMallocManaged(&d_density,sizeof(float));
+    cudaMalloc(&d_density,sizeof(float));
     cudaMemset(d_density,0,sizeof(float));
     int *d_mutex=0;
-    cudaMallocManaged(&d_mutex,sizeof(int));
-    cumulatedDensityKernel<<<gridSize,blockSize>>>(d_r, cells, m,n,p,d_density,d_mutex);
-    //printf("Density at pixel %d,%d: %f\n",i,j,*d_density);
-    float density=*d_density;
-    cudaFree(d_r);
+    cudaMalloc(&d_mutex,sizeof(int));
+    cudaMemset(d_mutex,0,sizeof(int));
+    int blocks=divUp(m*n*p,TX);
+    cumulatedDensityKernel<<<blocks,TX>>>(r.origin(),r.direction(), cells,d_density,d_mutex);
+
+    //testKernel<<<blocks,TX>>>(m,n,p);
+    float density;
+    cudaMemcpy(&density, d_density,sizeof(float),cudaMemcpyDeviceToHost);
+    //fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,density);
     cudaFree(d_density);
     cudaFree(d_mutex);
     return density;

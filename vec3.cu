@@ -29,3 +29,9 @@ __device__ __host__ float3 operator-(const float3 &v1, const float3 &v2) {
 __device__ __host__ float3 operator*(float t, const float3 &v) {
     return make_float3(t*v.x, t*v.y, t*v.z);
 }
+
+
+__device__ __host__ float3 lerp(const float3& a, const float3& b, float t)
+{
+    return (1-t)*a+t*b;
+}

@@ -3,6 +3,7 @@
 #include "utility.h"
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <stdio.h>
 #include "camera.h"
@@ -49,7 +50,8 @@ int main()
         upper.y=box.min().y+(box.max().y-box.min().y)/n*(j+1);
         lower.z=box.min().z+(box.max().z-box.min().z)/p*k;
         upper.z=box.min().z+(box.max().z-box.min().z)/p*(k+1);
-
+        cells[i+j*m+k*m*n]._min=lower;
+        cells[i+j*m+k*m*n]._max=upper;
         fprintf(file,"%d,%d,%d,%f,%f,%f,%f,%f,%f,%d\n",
                 i,j,k,
                 lower.x,lower.y,lower.z,upper.x,upper.y,upper.z,
@@ -66,13 +68,34 @@ int main()
     float3 origin = make_float3(-3000,1100,2200);
     float3 unitY = make_float3(0,1,0);
 
-    printf("Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
+    fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
     int nx=800;
     int ny=800;
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
+    float density, max_density;
+    max_density=88.0f;
+
+    ofstream pic;
+    pic.open("pic.ppm");
+    pic << "P3\n" << nx << " " << ny << "\n255\n";
+    int ir,ig,ib;
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
-        render(i,j,nx,ny,cam,cells,m,n,p);
+        {
+            density =  render(i,j,nx,ny,cam,cells,m,n,p);
+            if(density>0.0)
+                fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,density);
+            //if(density>max_density);
+            //        max_density=density;
+            float3 color=heat_color(density,max_density);
+            ir=int(255.99*color.x);
+            ig=int(255.99*color.y);
+            ib=int(255.99*color.z);
+            pic << ir<<" " << ig<<" " << ib<<"\n";
+
+        }
+    pic.close();
+    //fprintf(stderr,"Max density: %f\n", max_density);
 
     cudaFree(cells);
 

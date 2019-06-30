@@ -41,13 +41,13 @@ public:
 	}
     */
 
-    __device__ __host__ bool hit(const ray& r, float tmin, float tmax) const
+    __device__ __host__ bool hit(float3 o, float3 d, float tmin, float tmax) const
     {
 
         {
-            float invD = 1.0f/r.direction().x;
-            float t0 = (min().x-r.origin().x) * invD;
-            float t1 = (max().x-r.origin().x) * invD;
+            float invD = 1.0f/d.x;
+            float t0 = (min().x-o.x) * invD;
+            float t1 = (max().x-o.x) * invD;
             if(invD < 0.0f)
             {
                 float temp=t0;
@@ -60,9 +60,9 @@ public:
                 return false;
         }
         {
-            float invD = 1.0f/r.direction().y;
-            float t0 = (min().y-r.origin().y) * invD;
-            float t1 = (max().y-r.origin().y) * invD;
+            float invD = 1.0f/d.y;
+            float t0 = (min().y-o.y) * invD;
+            float t1 = (max().y-o.y) * invD;
             if(invD < 0.0f)
             {
                 float temp=t0;
@@ -75,9 +75,9 @@ public:
                 return false;
         }
         {
-            float invD = 1.0f/r.direction().z;
-            float t0 = (min().z-r.origin().z) * invD;
-            float t1 = (max().z-r.origin().z) * invD;
+            float invD = 1.0f/d.z;
+            float t0 = (min().z-o.z) * invD;
+            float t1 = (max().z-o.z) * invD;
             if(invD < 0.0f)
             {
                 float temp=t0;
@@ -100,6 +100,10 @@ public:
         std::cerr << "("<<_max.x<<", "<<_max.y<<", "<<_max.z<<")\n";
 	
 	}
+    __device__ __host__ void printf()
+    {
+        //printf("(%f,%f,%f)-(%f,%f,%f)\n",_min.x,_min.y,_min.z,_max.x,_max.y,_max.z);
+    }
     float3 _min;
     float3 _max;
     float density;

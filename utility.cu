@@ -28,3 +28,44 @@ aabb point_cloud_bounds(const std::vector<float3>& pc)
 
     return aabb(lower,upper);
 }
+
+const float3 color0=make_float3(0,0,0);
+const float3 color2=make_float3(0,0,1);
+const float3 color4=make_float3(0,1,1);
+const float3 color6=make_float3(0,1,0);
+const float3 color8=make_float3(1,1,0);
+const float3 color10=make_float3(1,0,0);
+
+
+float3 heat_color(float value, float max_value)
+{
+    float pct=value/max_value;
+    float t;
+    if(pct<0.20)
+    {
+        t=(pct-0.0)/(0.20-0.0);
+        return lerp(color0, color2,t);
+    }
+    if(pct<0.40)
+    {
+        t=(pct-0.20)/(0.40-0.20);
+        return lerp(color2, color4,t);
+    }
+    if(pct<0.60)
+    {
+        t=(pct-0.40)/(0.60-0.40);
+        return lerp(color4, color6,t);
+    }
+    if(pct<0.80)
+    {
+        t=(pct-0.60)/(0.80-0.60);
+        return lerp(color6, color8,t);
+    }
+    if(pct<1.00)
+    {
+        t=(pct-0.80)/(1.00-0.80);
+        return lerp(color8, color10,t);
+    }
+    else
+        return color10;
+}

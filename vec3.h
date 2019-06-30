@@ -11,4 +11,6 @@ __device__ __host__ float3 operator+(const float3 &v1, const float3 &v2);
 __device__ __host__ float3 operator-(const float3 &v1, const float3 &v2);
 
 __device__ __host__ float3 operator*(float t, const float3 &v);
+
+__device__ __host__ float3 lerp(const float3& a, const float3& b, float t);
 #endif // float3_H
