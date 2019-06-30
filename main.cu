@@ -65,7 +65,7 @@ int main()
     float3 centroid = make_float3(0.5*(box.min().x+box.max().x),
                                   0.5*(box.min().y+box.max().y),
                                   0.5*(box.min().z+box.max().z));
-    float3 origin = make_float3(0,1000,3200);
+    float3 origin = make_float3(0,-300,2200);
     float3 unitY = make_float3(0,1,0);
 
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
