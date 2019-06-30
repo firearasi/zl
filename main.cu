@@ -72,32 +72,34 @@ int main()
     int nx=800;
     int ny=800;
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
-    float density, max_density;
+    float max_density;
     max_density=88.0f;
 
     ofstream pic;
     pic.open("pic.ppm");
     pic << "P3\n" << nx << " " << ny << "\n255\n";
     int ir,ig,ib;
+    float *densities = (float *)calloc(nx*ny,sizeof(float));
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
-            density =  render(i,j,nx,ny,cam,cells,m,n,p);
-            if(density>50.0)
-                fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,density);
-            if(density>max_density)
-                   max_density=density;
+            densities[i+j*nx] =  render(i,j,nx,ny,cam,cells,m,n,p);
+            if(densities[i+j*nx]>50.0)
+                fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,densities[i+j*nx]);
+            if(densities[i+j*nx]>max_density)
+                   max_density=densities[i+j*nx];
         }
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
-            float3 color=heat_color(density,max_density);
+            float3 color=heat_color(densities[i+j*nx],max_density);
             ir=int(255.99*color.x);
             ig=int(255.99*color.y);
             ib=int(255.99*color.z);
             pic << ir<<" " << ig<<" " << ib<<"\n";
 
         }
+    free(densities);
     pic.close();
     //fprintf(stderr,"Max density: %f\n", max_density);
 
