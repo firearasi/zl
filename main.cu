@@ -65,7 +65,7 @@ int main()
     float3 centroid = make_float3(0.5*(box.min().x+box.max().x),
                                   0.5*(box.min().y+box.max().y),
                                   0.5*(box.min().z+box.max().z));
-    float3 origin = make_float3(0,1000,2700);
+    float3 origin = make_float3(0,1000,3200);
     float3 unitY = make_float3(0,1,0);
 
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
@@ -85,8 +85,12 @@ int main()
             density =  render(i,j,nx,ny,cam,cells,m,n,p);
             if(density>50.0)
                 fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,density);
-            //if(density>max_density);
-            //        max_density=density;
+            if(density>max_density)
+                   max_density=density;
+        }
+    for(int j=ny-1;j>=0;j--)
+        for(int i=0;i<nx;i++)
+        {
             float3 color=heat_color(density,max_density);
             ir=int(255.99*color.x);
             ig=int(255.99*color.y);
