@@ -5,6 +5,8 @@
 #include <iostream>
 #include <vector>
 #include <stdio.h>
+#include "camera.h"
+#include "render.h"
 
 
 using namespace std;
@@ -27,9 +29,13 @@ int main()
 
     int* counts;
     counts=(int *)calloc(m*n*p,sizeof(int));
-    count3D(pc, m, n,p, counts);
+    aabb* cells=0;
+    cudaMallocManaged((void**)&cells, m*n*p*sizeof(aabb));
+    count3D(pc, m, n,p, counts, cells);
 
-    printf("Writing cell distributions to cell_distribution.csv\n");
+
+ //write csv
+    fprintf(stderr,"Writing cell distributions to cell_distribution.csv\n");
     FILE *file=fopen("cell_distribution.csv","w");
     fprintf(file,"i,j,k,lowerX,lowerY,lowerZ,upperX,upperY,upperZ,count\n");
     for(int i=0;i<m;i++)
@@ -47,10 +53,28 @@ int main()
         fprintf(file,"%d,%d,%d,%f,%f,%f,%f,%f,%f,%d\n",
                 i,j,k,
                 lower.x,lower.y,lower.z,upper.x,upper.y,upper.z,
-                counts[i+j*m+k*m*n]);
+                (int)cells[i+j*m+k*m*n].density);
     }
     fclose(file);
     free(counts);
+
+
+ //volume rendering
+    float3 centroid = make_float3(0.5*(box.min().x+box.max().x),
+                                  0.5*(box.min().y+box.max().y),
+                                  0.5*(box.min().z+box.max().z));
+    float3 origin = make_float3(-3000,1100,2200);
+    float3 unitY = make_float3(0,1,0);
+
+    printf("Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
+    int nx=800;
+    int ny=800;
+    camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
+    for(int j=ny-1;j>=0;j--)
+        for(int i=0;i<nx;i++)
+        render(i,j,nx,ny,cam,cells,m,n,p);
+
+    cudaFree(cells);
 
     return 0;
 }

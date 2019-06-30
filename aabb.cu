@@ -1,8 +1,7 @@
 #include "aabb.h"
-float ffmin(float a, float b) {return a<b?a:b;}
-float ffmax(float a, float b) {return a>b?a:b;}
 
-bool aabb::contains(float3 pt)
+
+__device__ __host__ bool aabb::contains(float3 pt)
 {
     return (_min.x <= pt.x && pt.x <= _max.x) &&
            (_min.y <= pt.y && pt.y <= _max.y) &&

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #define TPB 32
 
-__global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, int m, int n, int p,int* counts, int *mutex)
+__global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, int m, int n, int p,int* counts, aabb* cells,int *mutex)
 {
 
 
@@ -25,7 +25,9 @@ __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, i
         if (0 == (atomicCAS(&mutex[cell_index],0,1)))
         {
             counts[cell_index]++;
-            printf("counts[%d,%d,%d]=%d\n", i,j,k, counts[cell_index]);
+            cells[cell_index].density=cells[cell_index].density+1;
+            //printf("counts[%d,%d,%d]=%d\n", i,j,k, counts[cell_index]);
+            //printf("cells[%d,%d,%d].density=%f\n", i,j,k, cells[cell_index].density);
 
             leave=false;
             atomicExch(&mutex[cell_index], 0);
@@ -34,7 +36,7 @@ __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, i
 }
 
 //m,n,p x,y,z上分成的小正方形
-void count3D(const std::vector<float3>pc, int m, int n,int p, int *counts)
+void count3D(const std::vector<float3>pc, int m, int n,int p, int *counts, aabb* cells)
 {
     int len = pc.size();
     aabb box=point_cloud_bounds(pc);
@@ -43,6 +45,7 @@ void count3D(const std::vector<float3>pc, int m, int n,int p, int *counts)
 
     cudaMalloc(&d_pc, len*sizeof(float3));
     cudaMemcpy(d_pc, &pc[0], len*sizeof(float3),cudaMemcpyHostToDevice);
+
 
 
     int* d_counts;
@@ -55,7 +58,7 @@ void count3D(const std::vector<float3>pc, int m, int n,int p, int *counts)
     cudaMallocManaged((void**)&mutex, m*n*p*sizeof(int));
     cudaMemset(mutex,0,m*n*p*sizeof(int));
 
-    count3DKernel<<<blocks, TPB>>>(d_pc, len, box.min(), box.max(), m,n,p,d_counts,mutex);
+    count3DKernel<<<blocks, TPB>>>(d_pc, len, box.min(), box.max(), m,n,p,d_counts,cells, mutex);
 
     cudaMemcpy(counts, d_counts, m*n*p*sizeof(int), cudaMemcpyDeviceToHost);
 

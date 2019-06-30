@@ -3,13 +3,16 @@
 
 #include <iostream>
 #include <vector>
-float ffmin(float a, float b);
-float ffmax(float a, float b);
+#include <float.h>
+#include "ray.h"
+#define ffmin(a,b) ((a) < (b) ? (a) : (b))
+#define ffmax(a,b) ((a) > (b) ? (a) : (b))
+
 
 class aabb{
 public:
-    aabb(){}
-    aabb(const float3& a, const float3 &b)
+    __device__ __host__ aabb(){}
+    __device__ __host__ aabb(const float3& a, const float3 &b)
 	{	
         _min.x=ffmin(a.x,b.x);
         _min.y=ffmin(a.y,b.y);
@@ -19,9 +22,10 @@ public:
         _max.z=ffmax(a.z,b.z);
 	 	
 	}
-    float3 min() const {return _min;}
-    float3 max() const {return _max;}
+    __device__ __host__ float3 min() const {return _min;}
+    __device__ __host__ float3 max() const {return _max;}
 
+    /*
     static aabb surrounding_box(aabb box0, aabb box1)
 	{
         float3 small, large;
@@ -35,7 +39,61 @@ public:
 	                                      				   
 		return aabb(small, large);		   
 	}
-    bool contains(float3 pt);
+    */
+
+    __device__ __host__ bool hit(const ray& r, float tmin, float tmax) const
+    {
+
+        {
+            float invD = 1.0f/r.direction().x;
+            float t0 = (min().x-r.origin().x) * invD;
+            float t1 = (max().x-r.origin().x) * invD;
+            if(invD < 0.0f)
+            {
+                float temp=t0;
+                t0=t1;
+                t1=temp;
+            }
+            tmin = ffmax(tmin, t0);
+            tmax = ffmin(tmax, t1);
+            if(tmax <= tmin)
+                return false;
+        }
+        {
+            float invD = 1.0f/r.direction().y;
+            float t0 = (min().y-r.origin().y) * invD;
+            float t1 = (max().y-r.origin().y) * invD;
+            if(invD < 0.0f)
+            {
+                float temp=t0;
+                t0=t1;
+                t1=temp;
+            }
+            tmin = ffmax(tmin, t0);
+            tmax = ffmin(tmax, t1);
+            if(tmax <= tmin)
+                return false;
+        }
+        {
+            float invD = 1.0f/r.direction().z;
+            float t0 = (min().z-r.origin().z) * invD;
+            float t1 = (max().z-r.origin().z) * invD;
+            if(invD < 0.0f)
+            {
+                float temp=t0;
+                t0=t1;
+                t1=temp;
+            }
+            tmin = ffmax(tmin, t0);
+            tmax = ffmin(tmax, t1);
+            if(tmax <= tmin)
+                return false;
+        }
+
+        return true;
+    }
+
+    __device__ __host__ bool contains(float3 pt);
 	void print()
 	{
         std::cerr << "("<<_min.x<<", "<<_min.y<<", "<<_min.z<<") - ";
@@ -44,6 +102,7 @@ public:
 	}
     float3 _min;
     float3 _max;
+    float density;
 };
 
 class aabb_mesh{
