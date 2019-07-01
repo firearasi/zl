@@ -18,9 +18,9 @@ int main()
 {
     std::vector<float3> pc = read_yxz("yxz.txt");
 
-    int x0=50;
-    int y0=50;
-    int z0=50;
+    int x0=40;
+    int y0=40;
+    int z0=40;
 
 
     aabb box=point_cloud_bounds(pc);
@@ -65,12 +65,14 @@ int main()
     float3 centroid = make_float3(0.5*(box.min().x+box.max().x),
                                   0.5*(box.min().y+box.max().y),
                                   0.5*(box.min().z+box.max().z));
-    float3 origin = make_float3(0,-300,2200);
+    float3 origin = make_float3(-2200,1098,2210);
     float3 unitY = make_float3(0,1,0);
 
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
-    int nx=800;
-    int ny=800;
+    int nx=400;
+    int ny=400;
+    int ns=5;
+
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
     float max_density;
     max_density=88.0f;
@@ -83,7 +85,7 @@ int main()
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
-            densities[i+j*nx] =  render(i,j,nx,ny,cam,cells,m,n,p);
+            densities[i+j*nx] =  render(i,j,nx,ny,cam,cells,m,n,p,ns);
             if(densities[i+j*nx]>50.0)
                 fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,densities[i+j*nx]);
             if(densities[i+j*nx]>max_density)

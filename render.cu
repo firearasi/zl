@@ -1,12 +1,13 @@
 #include "render.h"
 #include <limits.h>
+#include <stdlib.h>
 #define TX 32
 #define TY 32
 #define TZ 32
 
 int divUp(int a, int b){return (a+b-1)/b;}
 
-__global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,float* d_density, int* mutex)
+__global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,float* d_density, int* mutex, int ns)
 {
     const int index = blockIdx.x*blockDim.x+threadIdx.x;
 
@@ -30,7 +31,7 @@ __global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,float* d_
 }
 
 
-float render(int i, int j, int nx, int ny, camera& cam, aabb* cells, int m, int n, int p)
+float render(int i, int j, int nx, int ny, camera& cam, aabb* cells, int m, int n, int p, int ns)
 {
     //printf("render %d,%d\n",i,j);
     float u=float(i)/float(nx);
@@ -50,7 +51,7 @@ float render(int i, int j, int nx, int ny, camera& cam, aabb* cells, int m, int 
     cudaMalloc(&d_mutex,sizeof(int));
     cudaMemset(d_mutex,0,sizeof(int));
     int blocks=divUp(m*n*p,TX);
-    cumulatedDensityKernel<<<blocks,TX>>>(r.origin(),r.direction(), cells,d_density,d_mutex);
+    cumulatedDensityKernel<<<blocks,TX>>>(r.origin(),r.direction(), cells,d_density,d_mutex,ns);
 
     //testKernel<<<blocks,TX>>>(m,n,p);
     float density;
