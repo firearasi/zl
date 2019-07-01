@@ -1,12 +1,12 @@
 NVCC = nvcc
-NVCC_FLAGS = -g -G -Xcompiler -Wall
-
+NVCC_FLAGS = -g -G -Xcompiler -Wall -I/opt/cuda/targets/x86_64-linux/include/
+NVCC_LD_FLAGS = -lcurand
 CUS := $(wildcard *.cu)
 OBJS := $(patsubst  %.cu, %.o, $(CUS))
 all: main.exe
 
 main.exe:$(OBJS)  
-	$(NVCC) $^ -o $@
+	$(NVCC) $(NVCC_LD_FLAGS) $^ -o $@ 
 
 %.o: %.cu %.h
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@

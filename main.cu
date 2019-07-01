@@ -71,8 +71,9 @@ int main()
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
     int nx=400;
     int ny=400;
-    int ns=5;
+    int ns=1;
 
+    setupSeeds(m,n,p);
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
     float max_density;
     max_density=88.0f;
