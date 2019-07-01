@@ -28,7 +28,7 @@ int main()
     int m=(int)(box.max().x-box.min().x)/x0+1;
     int n=(int)(box.max().y-box.min().y)/y0+1;
     int p=(int)(box.max().z-box.min().z)/z0+1;
-
+/*
     int* counts;
     counts=(int *)calloc(m*n*p,sizeof(int));
     aabb* cells=0;
@@ -60,7 +60,7 @@ int main()
     }
     fclose(file);
     free(counts);
-
+*/
 
  //volume rendering
     float3 centroid = make_float3(0.5*(box.min().x+box.max().x),
@@ -72,23 +72,33 @@ int main()
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
     int nx=400;
     int ny=400;
-    int ns=5;
+   // int ns=5;
+    float radius = 15.0;
 
     setupSeeds(64);
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
     float max_density;
-    max_density=0.0f;
+    max_density=1.0f;
 
     ofstream pic;
     pic.open("pic.ppm");
     pic << "P3\n" << nx << " " << ny << "\n255\n";
     int ir,ig,ib;
     float *densities = (float *)calloc(nx*ny,sizeof(float));
+
+    float3* d_pc;
+
+    CudaSafeCall(cudaMallocManaged(&d_pc,  pc.size()*sizeof(float3)));
+    CudaSafeCall(cudaMemcpy(d_pc, &pc[0], pc.size()*sizeof(float3),cudaMemcpyHostToDevice));
+
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
-            densities[i+j*nx] =  render(i,j,nx,ny,cam,cells,m,n,p,ns);
-            if(densities[i+j*nx]>50.0)
+            //densities[i+j*nx] =  render(i,j,nx,ny,cam,cells,m,n,p,ns);
+
+            densities[i+j*nx] =  render2(i,j,nx,ny,cam,d_pc,pc.size(),radius);
+
+            if(densities[i+j*nx]>0.0)
                 fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,densities[i+j*nx]);
             if(densities[i+j*nx]>max_density)
                    max_density=densities[i+j*nx];
@@ -107,7 +117,8 @@ int main()
     pic.close();
     //fprintf(stderr,"Max density: %f\n", max_density);
 
-    CudaSafeCall(cudaFree(cells));
+    //CudaSafeCall(cudaFree(cells));
+    CudaSafeCall(cudaFree(d_pc));
 
     return 0;
 }

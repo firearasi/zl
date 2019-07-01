@@ -34,7 +34,6 @@ __global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,int len,f
         return;
     if(cells[index].hit(o,d,0,FLT_MAX))
     {
-        //    printf("Hit!\n");
         //mutex
         bool leave=true;
         while(leave)
@@ -56,8 +55,6 @@ float render(int i, int j, int nx, int ny, camera& cam, aabb* cells, int m, int 
 {
     //printf("render %d,%d\n",i,j);
     float density;
-
-
     float u=float(i)/float(nx);
     float v=float(j)/float(ny);
 
@@ -81,3 +78,57 @@ float render(int i, int j, int nx, int ny, camera& cam, aabb* cells, int m, int 
 
     return density;
 }
+
+
+__global__ void cumulatedDensityKernel2(float3 o, float3 d, float3* d_pc,int len,float* d_density, float radius,int* mutex)
+{
+    const int index = blockIdx.x*blockDim.x+threadIdx.x;
+    if(index>=len)
+        return;
+    ray r(o,d);
+    if(r.distance_to_pt(d_pc[index])<=radius)
+    {
+      //printf("Hit!\n");
+
+        bool leave=true;
+        while(leave)
+        {
+            if (0 == (atomicCAS(mutex,0,1)))
+            {
+                *d_density = *d_density+1;
+                leave=false;
+                atomicExch(mutex, 0);
+            }
+        }
+    }
+}
+
+
+float render2(int i,int j,int nx,int ny,camera& cam, float3* d_pc, int len,float radius)
+{
+    float density;
+    float u=float(i)/float(nx);
+    float v=float(j)/float(ny);
+    ray r=cam.get_ray(u,v);
+
+    float* d_density=0;
+    CudaSafeCall(cudaMalloc(&d_density,sizeof(float)));
+    CudaSafeCall(cudaMemset(d_density,0,sizeof(float)));
+    int *d_mutex=0;
+    CudaSafeCall(cudaMalloc(&d_mutex,sizeof(int)));
+    CudaSafeCall(cudaMemset(d_mutex,0,sizeof(int)));
+
+    int blocks = divUp(len,TX);
+    cumulatedDensityKernel2<<<blocks, TX>>>(r.origin(),r.direction(),d_pc,len,d_density,radius,d_mutex);
+    CudaCheckError();
+
+    CudaSafeCall(cudaMemcpy(&density, d_density,sizeof(float),cudaMemcpyDeviceToHost));
+    //fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,density);
+    CudaSafeCall(cudaFree(d_density));
+    CudaSafeCall(cudaFree(d_mutex));
+
+
+    return density;
+
+}
+
