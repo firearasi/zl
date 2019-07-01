@@ -10,10 +10,12 @@
 #include "render.h"
 #include "cuda_check_error.h"
 
+#define TX 32
+#define TY 32
 
 using namespace std;
 
-
+extern int divUp(int a, int b);
 
 int main()
 {
@@ -73,12 +75,12 @@ int main()
     int nx=400;
     int ny=400;
    // int ns=5;
-    float radius = 15.0;
+    float radius = 20.0;
 
     setupSeeds(64);
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
-    float max_density;
-    max_density=1.0f;
+    //float max_density;
+    //max_density=1.0f;
 
     ofstream pic;
     pic.open("pic.ppm");
@@ -87,26 +89,58 @@ int main()
     float *densities = (float *)calloc(nx*ny,sizeof(float));
 
     float3* d_pc;
+    int len=pc.size();
 
-    CudaSafeCall(cudaMallocManaged(&d_pc,  pc.size()*sizeof(float3)));
-    CudaSafeCall(cudaMemcpy(d_pc, &pc[0], pc.size()*sizeof(float3),cudaMemcpyHostToDevice));
+    CudaSafeCall(cudaMallocManaged(&d_pc,  len*sizeof(float3)));
+    CudaSafeCall(cudaMemcpy(d_pc, &pc[0], len*sizeof(float3),cudaMemcpyHostToDevice));
 
-    for(int j=ny-1;j>=0;j--)
+    float* d_pixels;
+    CudaSafeCall(cudaMallocManaged(&d_pixels, nx*ny*sizeof(float)));
+    CudaSafeCall(cudaMemset(d_pixels,0,nx*ny*sizeof(float)));
+
+    float * d_max_density;
+    CudaSafeCall(cudaMallocManaged(&d_max_density, sizeof(float)));
+    CudaSafeCall(cudaMemset(d_max_density,0,sizeof(float)));
+
+    /*for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
             //densities[i+j*nx] =  render(i,j,nx,ny,cam,cells,m,n,p,ns);
 
-            densities[i+j*nx] =  render2(i,j,nx,ny,cam,d_pc,pc.size(),radius);
+            densities[i+j*nx] =  render2(i,j,nx,ny,cam,d_pc,len,radius);
 
-            if(densities[i+j*nx]>0.0)
-                fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,densities[i+j*nx]);
+            //if(densities[i+j*nx]>0.0)
+             //   fprintf(stderr,"Density at pixel %d,%d: %f\n",i,j,densities[i+j*nx]);
             if(densities[i+j*nx]>max_density)
                    max_density=densities[i+j*nx];
+        }
+    */
+
+    const dim3 blockSize(TX,TY);
+    const dim3 gridSize(divUp(nx*ny,TX),divUp(len,TY));
+
+    int *d_mutex=0;
+    CudaSafeCall(cudaMallocManaged((void**)&d_mutex, nx*ny*sizeof(int)));
+    CudaSafeCall(cudaMemset(d_mutex,0,nx*ny*sizeof(int)));
+
+    camera *d_cam;
+    CudaSafeCall(cudaMallocManaged(&d_cam, sizeof(camera)));
+    CudaSafeCall(cudaMemcpy(d_cam, &cam, sizeof(camera),cudaMemcpyHostToDevice));
+
+    renderAllKernel<<<gridSize, blockSize>>>(d_pixels,nx,ny,d_pc,len,d_max_density,d_cam,radius,d_mutex);
+    CudaCheckError();
+    //CudaSafeCall(cudaDeviceSynchronize());
+
+    for(int j=ny-1;j>=0;j--)
+        for(int i=0;i<nx;i++)
+        {
+            if(d_pixels[i+j*nx]>*d_max_density)
+                *d_max_density=d_pixels[i+j*nx];
         }
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
-            float3 color=heat_color(densities[i+j*nx],max_density);
+            float3 color=heat_color(d_pixels[i+j*nx],*d_max_density);
             ir=int(255.99*color.x);
             ig=int(255.99*color.y);
             ib=int(255.99*color.z);
@@ -119,6 +153,10 @@ int main()
 
     //CudaSafeCall(cudaFree(cells));
     CudaSafeCall(cudaFree(d_pc));
+    CudaSafeCall(cudaFree(d_pixels));
+    CudaSafeCall(cudaFree(d_max_density));
+    CudaSafeCall(cudaFree(d_mutex));
+    CudaSafeCall(cudaFree(d_cam));
 
     return 0;
 }

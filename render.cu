@@ -129,6 +129,37 @@ float render2(int i,int j,int nx,int ny,camera& cam, float3* d_pc, int len,float
 
 
     return density;
-
 }
 
+__global__ void renderAllKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len,float *d_max_density,camera* d_cam,float radius,int *d_mutex)
+{
+    *d_max_density=0;
+    const int pixel_index = blockIdx.x*blockDim.x+threadIdx.x;
+    const int pc_index = blockIdx.y*blockDim.y+threadIdx.y;
+    if(pixel_index>=nx*ny || pc_index>=len)
+        return;
+    int i,j;
+
+    i=pixel_index%nx;
+    j=pixel_index/nx;
+
+    float u=float(i)/float(nx);
+    float v=float(j)/float(ny);
+    ray r=d_cam->get_ray(u,v);
+    if(r.distance_to_pt(d_pc[pc_index])<=radius)
+    {
+       // printf("Hit!\n");
+
+        bool leave=true;
+        while(leave)
+        {
+            if (0 == (atomicCAS(&d_mutex[pixel_index],0,1)))
+            {
+                d_pixels[pixel_index] = d_pixels[pixel_index]+1;
+                leave=false;
+                atomicExch(&d_mutex[pixel_index], 0);
+            }
+        }
+    }
+
+}
