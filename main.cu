@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "camera.h"
 #include "render.h"
+#include "cuda_check_error.h"
 
 
 using namespace std;
@@ -31,7 +32,7 @@ int main()
     int* counts;
     counts=(int *)calloc(m*n*p,sizeof(int));
     aabb* cells=0;
-    cudaMallocManaged((void**)&cells, m*n*p*sizeof(aabb));
+    CudaSafeCall(cudaMallocManaged((void**)&cells, m*n*p*sizeof(aabb)));
     count3D(pc, m, n,p, counts, cells);
 
 
@@ -71,9 +72,9 @@ int main()
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
     int nx=400;
     int ny=400;
-    int ns=1;
+    int ns=5;
 
-    setupSeeds(m,n,p);
+    setupSeeds(64);
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
     float max_density;
     max_density=88.0f;
@@ -106,7 +107,7 @@ int main()
     pic.close();
     //fprintf(stderr,"Max density: %f\n", max_density);
 
-    cudaFree(cells);
+    CudaSafeCall(cudaFree(cells));
 
     return 0;
 }

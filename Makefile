@@ -15,4 +15,7 @@ main.exe:$(OBJS)
 clean:
 	rm -f *.o *.exe
 test: main.exe
-	./main.exe
+	date
+	time "./main.exe"
+	date
+	okular pic.ppm

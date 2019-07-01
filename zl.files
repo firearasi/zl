@@ -4,6 +4,8 @@ aabb.h
 camera.h
 count3D.cu
 count3D.h
+cuda_check_error.cu
+cuda_check_error.h
 main.cu
 main.h
 ray.h

@@ -1,6 +1,7 @@
 #include "count3D.h"
 #include "utility.h"
 #include <stdio.h>
+#include "cuda_check_error.h"
 #define TPB 32
 
 __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, int m, int n, int p,int* counts, aabb* cells,int *mutex)
@@ -43,26 +44,27 @@ void count3D(const std::vector<float3>pc, int m, int n,int p, int *counts, aabb*
     box.print();
     float3* d_pc;
 
-    cudaMalloc(&d_pc, len*sizeof(float3));
-    cudaMemcpy(d_pc, &pc[0], len*sizeof(float3),cudaMemcpyHostToDevice);
+    CudaSafeCall(cudaMalloc(&d_pc, len*sizeof(float3)));
+    CudaSafeCall(cudaMemcpy(d_pc, &pc[0], len*sizeof(float3),cudaMemcpyHostToDevice));
 
 
 
     int* d_counts;
 
-    cudaMalloc(&d_counts, m*n*p*sizeof(int));
+    CudaSafeCall(cudaMalloc(&d_counts, m*n*p*sizeof(int)));
 
     int blocks=(len+TPB-1)/TPB;
 
     int* mutex;//all threads share on mutex.
-    cudaMallocManaged((void**)&mutex, m*n*p*sizeof(int));
-    cudaMemset(mutex,0,m*n*p*sizeof(int));
+    CudaSafeCall(cudaMallocManaged((void**)&mutex, m*n*p*sizeof(int)));
+    CudaSafeCall(cudaMemset(mutex,0,m*n*p*sizeof(int)));
 
     count3DKernel<<<blocks, TPB>>>(d_pc, len, box.min(), box.max(), m,n,p,d_counts,cells, mutex);
+    CudaCheckError();
 
-    cudaMemcpy(counts, d_counts, m*n*p*sizeof(int), cudaMemcpyDeviceToHost);
+    CudaSafeCall(cudaMemcpy(counts, d_counts, m*n*p*sizeof(int), cudaMemcpyDeviceToHost));
 
-    cudaFree(d_pc);
-    cudaFree(d_counts);
-    cudaFree(mutex);
+    CudaSafeCall(cudaFree(d_pc));
+    CudaSafeCall(cudaFree(d_counts));
+    CudaSafeCall(cudaFree(mutex));
 }
