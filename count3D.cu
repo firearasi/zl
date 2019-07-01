@@ -2,7 +2,7 @@
 #include "utility.h"
 #include <stdio.h>
 #include "cuda_check_error.h"
-#define TPB 32
+#define TPB 64
 
 __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, int m, int n, int p,int* counts, aabb* cells,int *mutex)
 {
@@ -15,10 +15,12 @@ __global__ void count3DKernel(float3 *pc, int len, float3 lower, float3 upper, i
     int j= (int)(pc[t].y-lower.y)/(upper.y-lower.y)*n;
     int k= (int)(pc[t].z-lower.z)/(upper.z-lower.z)*p;
 
+
     //printf("Thread %2d: point(%f,%f,%f) is in cell(%d,%d,%d)\n", t,pc[t].x,pc[t].y,pc[t].z,i,j,k);
 
     int cell_index=i+j*m+k*m*n;
-
+    if(i>=m||j>=n||k>=p)
+        return;
     //mutex
     bool leave=true;
     while(leave)

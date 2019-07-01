@@ -26,20 +26,15 @@ void setupSeeds(int tx)
     CudaCheckError();
 }
 
-__global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,float* d_density, int* mutex, int ns,curandState* globalState)
+__global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,int len,float* d_density, int* mutex, int ns,curandState* globalState)
 {
     const int index = blockIdx.x*blockDim.x+threadIdx.x;
-    curandState localState = globalState[threadIdx.x];
-
-    float random1=curand_uniform(&localState)-0.5;
-    //if(threadIdx.x==0)
-    //    printf("curand %f",random1);
-    float random2=curand_uniform(&localState)-0.5;
-    float random3=curand_uniform(&localState)-0.5;
-
+    //curandState localState = globalState[threadIdx.x];
+    if(index>=len)
+        return;
     if(cells[index].hit(o,d,0,FLT_MAX))
     {
-    //    printf("Hit!\n");
+        //    printf("Hit!\n");
         //mutex
         bool leave=true;
         while(leave)
@@ -52,6 +47,7 @@ __global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,float* d_
             }
         }
     }
+
 }
 
 
@@ -75,7 +71,7 @@ float render(int i, int j, int nx, int ny, camera& cam, aabb* cells, int m, int 
     CudaSafeCall(cudaMalloc(&d_mutex,sizeof(int)));
     CudaSafeCall(cudaMemset(d_mutex,0,sizeof(int)));
     int blocks=divUp(m*n*p,TX);
-    cumulatedDensityKernel<<<blocks,TX>>>(r.origin(),r.direction(), cells,d_density,d_mutex,ns,devStates);
+    cumulatedDensityKernel<<<blocks,TX>>>(r.origin(),r.direction(), cells,m*n*p,d_density,d_mutex,ns,devStates);
     CudaCheckError();
 
     CudaSafeCall(cudaMemcpy(&density, d_density,sizeof(float),cudaMemcpyDeviceToHost));

@@ -19,9 +19,9 @@ int main()
 {
     std::vector<float3> pc = read_yxz("yxz.txt");
 
-    int x0=40;
-    int y0=40;
-    int z0=40;
+    int x0=15;
+    int y0=15;
+    int z0=15;
 
 
     aabb box=point_cloud_bounds(pc);
@@ -77,7 +77,7 @@ int main()
     setupSeeds(64);
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
     float max_density;
-    max_density=88.0f;
+    max_density=0.0f;
 
     ofstream pic;
     pic.open("pic.ppm");
