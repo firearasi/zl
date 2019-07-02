@@ -3,6 +3,9 @@
 #include <algorithm>
 
 // 找出点云的上下界
+
+int divUp(int a, int b){return (a+b-1)/b;}
+
 aabb point_cloud_bounds(const std::vector<float3>& pc)
 {
     float3 lower, upper;

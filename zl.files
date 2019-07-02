@@ -8,11 +8,15 @@ cuda_check_error.cu
 cuda_check_error.h
 main.cu
 main.h
+plane.cu
+plane.h
 ray.h
 readfile.cu
 readfile.h
 render.cu
 render.h
+render2D.cu
+render2D.h
 utility.cu
 utility.h
 vec3.cu

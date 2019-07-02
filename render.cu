@@ -6,18 +6,18 @@
 //#include <helper_cuda.h>
 #include <time.h>
 #include "cuda_check_error.h"
+#include "utility.h"
+
 #define TX 64
 #define TY 32
 #define TZ 32
-
-int divUp(int a, int b){return (a+b-1)/b;}
 
 
 curandState* devStates=nullptr;
 __global__ void setupSeedsKernel ( curandState * state, unsigned long seed )
 {
     int id = threadIdx.x;
-    curand_init ( seed, id, 0, &state[id] );
+    curand_init ( seed, id, 0, &state[id]);
 }
 
 __global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,int len,float* d_density, int* mutex, int ns,curandState* globalState)
