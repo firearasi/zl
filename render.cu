@@ -2,7 +2,7 @@
 #include <limits.h>
 #include <stdlib.h>
 //#include <curand_uniform.h>
-#include <curand_kernel.h>
+
 //#include <helper_cuda.h>
 #include <time.h>
 #include "cuda_check_error.h"
@@ -12,18 +12,12 @@
 
 int divUp(int a, int b){return (a+b-1)/b;}
 
+
 curandState* devStates=nullptr;
 __global__ void setupSeedsKernel ( curandState * state, unsigned long seed )
 {
     int id = threadIdx.x;
     curand_init ( seed, id, 0, &state[id] );
-}
-
-void setupSeeds(int tx)
-{
-    CudaSafeCall(cudaMalloc(&devStates, tx*sizeof(curandState)));
-    setupSeedsKernel<<<1,tx>>>(devStates,time(nullptr));
-    CudaCheckError();
 }
 
 __global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,int len,float* d_density, int* mutex, int ns,curandState* globalState)
@@ -131,8 +125,17 @@ float render2(int i,int j,int nx,int ny,camera& cam, float3* d_pc, int len,float
     return density;
 }
 
-__global__ void renderAllKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len,float *d_max_density,camera* d_cam,float radius,int *d_mutex)
+
+void setupSeeds(int tx)
 {
+    CudaSafeCall(cudaMalloc(&devStates, tx*sizeof(curandState)));
+    setupSeedsKernel<<<1,tx>>>(devStates,time(nullptr));
+    CudaCheckError();
+}
+
+__global__ void renderAllKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len,float *d_max_density,camera* d_cam,float radius,int *d_mutex,int ns,curandState* globalState)
+{
+    curandState localState = globalState[threadIdx.x];
     *d_max_density=0;
     const int pixel_index = blockIdx.x*blockDim.x+threadIdx.x;
     const int pc_index = blockIdx.y*blockDim.y+threadIdx.y;
@@ -143,23 +146,62 @@ __global__ void renderAllKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int l
     i=pixel_index%nx;
     j=pixel_index/nx;
 
-    float u=float(i)/float(nx);
-    float v=float(j)/float(ny);
-    ray r=d_cam->get_ray(u,v);
-    if(r.distance_to_pt(d_pc[pc_index])<=radius)
+    for(int s=0;s<ns;s++)
     {
-       // printf("Hit!\n");
-
-        bool leave=true;
-        while(leave)
+        float u,v;
+        if(ns==1){
+            u=float(i)/float(nx);
+            v=float(j)/float(ny);
+        }
+        else
         {
-            if (0 == (atomicCAS(&d_mutex[pixel_index],0,1)))
+            u=float(i+curand_uniform(&localState)-0.5)/float(nx);
+            v=float(j+curand_uniform(&localState)-0.5)/float(ny);
+        }
+        ray r=d_cam->get_ray(u,v);
+        if(r.distance_to_pt(d_pc[pc_index])<=radius)
+        {
+            // printf("Hit!\n");
+
+            bool leave=true;
+            while(leave)
             {
-                d_pixels[pixel_index] = d_pixels[pixel_index]+1;
-                leave=false;
-                atomicExch(&d_mutex[pixel_index], 0);
+                if (0 == (atomicCAS(&d_mutex[pixel_index],0,1)))
+                {
+                    d_pixels[pixel_index] = d_pixels[pixel_index]+1.0/ns;
+                    leave=false;
+                    atomicExch(&d_mutex[pixel_index], 0);
+                }
             }
         }
     }
 
+}
+
+
+
+__global__ void maxKernel(float* d_max,float* d_array, int len)
+{
+    const int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    if (idx >= len) return;
+    const int s_idx = threadIdx.x;
+
+    __shared__ float s_array[TPB];
+    s_array[s_idx]=d_array[idx];
+    __syncthreads();
+    if(s_idx==0)
+    {
+        float blockMax=0;
+        for(int i=0;i<TPB;i++)
+        {
+            if(s_array[i]>blockMax)
+            {
+                blockMax=s_array[i];
+            }
+        }
+        if(blockMax > *d_max)
+        {
+            atomicAdd(d_max, blockMax-*d_max);
+        }
+    }
 }

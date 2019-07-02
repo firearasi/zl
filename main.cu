@@ -68,14 +68,16 @@ int main()
     float3 centroid = make_float3(0.5*(box.min().x+box.max().x),
                                   0.5*(box.min().y+box.max().y),
                                   0.5*(box.min().z+box.max().z));
-    float3 origin = make_float3(-2200,1098,2210);
+    //float3 origin = make_float3(-2200,1098,2210);
+    //float3 origin=make_float3(500,2300,2210);
+    float3 origin=make_float3(600,1100,4300);
     float3 unitY = make_float3(0,1,0);
 
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
     int nx=400;
     int ny=400;
-   // int ns=5;
-    float radius = 20.0;
+    int ns=4;
+    float radius =  40.0;
 
     setupSeeds(64);
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
@@ -127,16 +129,21 @@ int main()
     CudaSafeCall(cudaMallocManaged(&d_cam, sizeof(camera)));
     CudaSafeCall(cudaMemcpy(d_cam, &cam, sizeof(camera),cudaMemcpyHostToDevice));
 
-    renderAllKernel<<<gridSize, blockSize>>>(d_pixels,nx,ny,d_pc,len,d_max_density,d_cam,radius,d_mutex);
+    setupSeeds(TX);
+    renderAllKernel<<<gridSize, blockSize>>>(d_pixels,nx,ny,d_pc,len,d_max_density,d_cam,radius,d_mutex,ns,devStates);
     CudaCheckError();
     //CudaSafeCall(cudaDeviceSynchronize());
 
+    //maxKernel<<<divUp(nx*ny,TPB),TPB>>>(d_max_density,d_pixels, nx*ny);
+    //CudaCheckError();
+#if 1
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
             if(d_pixels[i+j*nx]>*d_max_density)
                 *d_max_density=d_pixels[i+j*nx];
         }
+#endif
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
