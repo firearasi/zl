@@ -70,8 +70,8 @@ int main3D(int ns)
                                   0.5*(box.min().y+box.max().y),
                                   0.5*(box.min().z+box.max().z));
     //float3 origin = make_float3(-2200,1098,2210);
-    //float3 origin=make_float3(500,2300,2210);
-    float3 origin=make_float3(600,1100,4300);
+    float3 origin=make_float3(500,2300,2210);
+    //float3 origin=make_float3(600,1100,4300);
     float3 unitY = make_float3(0,1,0);
 
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);

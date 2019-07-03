@@ -3,7 +3,7 @@
 
 int main()
 {
-    int ns=3;
+    int ns=5;
     main2D(ns);
     return 0;
 }

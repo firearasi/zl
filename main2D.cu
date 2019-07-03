@@ -114,6 +114,11 @@ int main2D(int ns)
         }
     printf("Max density after: %f\n",*d_max_density);
 #endif
+
+    ofstream csv;
+    csv.open("pic.csv");
+    csv<<"i,j,density,r,g,b"<<endl;
+
     for(int j=ny-1;j>=0;j--)
         for(int i=0;i<nx;i++)
         {
@@ -122,8 +127,14 @@ int main2D(int ns)
             ig=int(255.99*color.y);
             ib=int(255.99*color.z);
             pic << ir<<" " << ig<<" " << ib<<"\n";
-
+            csv<<i<<","<<j<<","<<d_pixels[i+j*nx]<<","<<ir<<","<<ig<<","<<ib<<endl;
         }
+
+//csv
+
+
+    csv.close();
+
     free(densities);
     pic.close();
     //fprintf(stderr,"Max density: %f\n", max_density);
