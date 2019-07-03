@@ -21,7 +21,7 @@ using namespace std;
 extern int divUp(int a, int b);
 
 
-int main2D()
+int main2D(int ns)
 {
     std::vector<float3> pc = read_yxz("yxz.txt");
 
@@ -42,19 +42,20 @@ int main2D()
                                   0.5*(box.min().z+box.max().z));
     //float3 origin = make_float3(-2200,1098,2210);
     //float3 origin=make_float3(500,2300,2210);
-    float3 origin=make_float3(300,1500,4300);
 
     float3 unitY = make_float3(0,1,0);
 
-    plane aPlane(make_float3(0,0,2210),make_float3(0,0,-1));
+    plane aPlane(make_float3(0,0,centroid.z),make_float3(0.0,0.0,1));
 
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
     int nx=400;
     int ny=400;
-    int ns=3;
-    float radius =  40.0;
+
+    float radius =  100.0;
 
     setupSeeds(64);
+    float3 origin=make_float3(300,1500,4300);
+
     camera cam(origin,centroid,unitY,45,(float)nx/(float)ny,0,1000);
     //float max_density;
     //max_density=1.0f;

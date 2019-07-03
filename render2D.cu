@@ -56,11 +56,21 @@ __global__ void renderPlaneKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int
         ray r=d_cam->get_ray(u,v);
         float3 intersect_pt;
         if(!d_plane->intersects_with(r,intersect_pt))
+        {
+#ifdef VERBOSE
+            printf("ray into (%d,%d) does not intersect with plane!\n",i,j);
+#endif
             continue;
+        }
 
+#ifdef VERBOSE
+        //printf("ray into (%d,%d) intersects with plane @(%f,%f,%f)!\n",i,j,intersect_pt.x,intersect_pt.y,intersect_pt.z);
+#endif
         if(length(intersect_pt-d_pc[pc_index])<=radius)
         {
-            // printf("Hit!\n");
+#ifdef VERBOSE
+             printf("Hit!\n");
+#endif
 
             bool go=true;
             while(go)

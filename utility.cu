@@ -42,6 +42,8 @@ const float3 color10=make_float3(1,0,0);
 
 float3 heat_color(float value, float max_value)
 {
+    if(max_value < 1.0)
+        return color0;
     float pct=value/max_value;
     float t;
     if(pct<0.20)

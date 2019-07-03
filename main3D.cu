@@ -17,7 +17,7 @@ using namespace std;
 
 extern int divUp(int a, int b);
 
-int main3D()
+int main3D(int ns)
 {
     std::vector<float3> pc = read_yxz("yxz.txt");
 
@@ -77,7 +77,7 @@ int main3D()
     fprintf(stderr,"Centroid: (%f,%f,%f)\n",centroid.x,centroid.y,centroid.z);
     int nx=400;
     int ny=400;
-    int ns=4;
+
     float radius =  40.0;
 
     setupSeeds(64);

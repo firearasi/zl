@@ -6,7 +6,7 @@ __device__ __host__ plane::plane(float3 _pt, float3 _normal)
     N=unit_vector(_normal);
 }
 
-__device__ __host__ float plane::distance_to_pt(float3 Q)
+__device__ __host__ inline float plane::distance_to_pt(float3 Q)
 {
 
     return dot(Q-P,N);

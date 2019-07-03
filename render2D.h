@@ -9,6 +9,7 @@
 //#define TPB 32
 using namespace std;
 
+//#define VERBOSE
 extern curandState* devStates2D;
 
 void setupPlaneSeeds(int tx);
