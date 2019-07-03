@@ -28,7 +28,8 @@ void setupPlaneSeeds(int tx)
     CudaCheckError();
 }
 
-__global__ void renderPlaneKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len, plane *d_plane,camera* d_cam,float radius,int *d_mutex,int ns,curandState* globalState)
+__global__ void renderPlaneKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len, plane *d_plane,float* d_max_density,
+                                  camera* d_cam, float radius,int *d_mutex,int ns,curandState* globalState)
 {
     curandState localState = globalState[threadIdx.x];
     const int pixel_index = blockIdx.x*blockDim.x+threadIdx.x;
@@ -61,14 +62,16 @@ __global__ void renderPlaneKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int
         {
             // printf("Hit!\n");
 
-            bool leave=true;
-            while(leave)
+            bool go=true;
+            while(go)
             {
                 if (0 == (atomicCAS(&d_mutex[pixel_index],0,1)))
                 {
-                    d_pixels[pixel_index] = d_pixels[pixel_index]+1.0/ns;
-                    leave=false;
+                    d_pixels[pixel_index] += 1.0/ns;
+                    *d_max_density = max(*d_max_density, d_pixels[pixel_index]);
                     atomicExch(&d_mutex[pixel_index], 0);
+
+                    go=false;
                 }
             }
         }

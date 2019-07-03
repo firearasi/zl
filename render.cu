@@ -35,6 +35,7 @@ __global__ void cumulatedDensityKernel(float3 o, float3 d, aabb *cells,int len,f
             if (0 == (atomicCAS(mutex,0,1)))
             {
                 *d_density += cells[index].density;
+
                 leave=false;
                 atomicExch(mutex, 0);
             }
@@ -136,7 +137,6 @@ void setupSeeds(int tx)
 __global__ void renderAllKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len,float *d_max_density,camera* d_cam,float radius,int *d_mutex,int ns,curandState* globalState)
 {
     curandState localState = globalState[threadIdx.x];
-    *d_max_density=0;
     const int pixel_index = blockIdx.x*blockDim.x+threadIdx.x;
     const int pc_index = blockIdx.y*blockDim.y+threadIdx.y;
     if(pixel_index>=nx*ny || pc_index>=len)
@@ -168,7 +168,8 @@ __global__ void renderAllKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int l
             {
                 if (0 == (atomicCAS(&d_mutex[pixel_index],0,1)))
                 {
-                    d_pixels[pixel_index] = d_pixels[pixel_index]+1.0/ns;
+                    d_pixels[pixel_index] += 1.0/ns;
+                    *d_max_density=max(*d_max_density, d_pixels[pixel_index]);
                     leave=false;
                     atomicExch(&d_mutex[pixel_index], 0);
                 }

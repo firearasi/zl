@@ -1,4 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
-
-#endif // MAIN_H
+#ifndef MAIN3D_H
+#define MAIN3D_H
+int main3D();
+#endif // MAIN3D_H

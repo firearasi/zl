@@ -12,5 +12,6 @@ using namespace std;
 extern curandState* devStates2D;
 
 void setupPlaneSeeds(int tx);
-__global__ void renderPlaneKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len,plane *d_plane,camera* d_cam,float radius,int *d_mutex,int ns,curandState* globalState);
+__global__ void renderPlaneKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len,plane *d_plane,float* d_max_density,
+                                  camera* d_cam,float radius,int *d_mutex,int ns,curandState* globalState);
 #endif
