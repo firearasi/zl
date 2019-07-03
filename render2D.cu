@@ -1,4 +1,4 @@
-#include "render.h"
+#include "render2D.h"
 #include <limits.h>
 #include <stdlib.h>
 //#include <curand_uniform.h>
@@ -21,14 +21,14 @@ __global__ void setupSeeds2DKernel ( curandState * state, unsigned long seed )
     curand_init ( seed, id, 0, &state[id] );
 }
 
-void setupSeeds2D(int tx)
+void setupPlaneSeeds(int tx)
 {
-    CudaSafeCall(cudaMalloc(&devStates, tx*sizeof(curandState)));
+    CudaSafeCall(cudaMalloc(&devStates2D, tx*sizeof(curandState)));
     setupSeeds2DKernel<<<1,tx>>>(devStates2D,time(nullptr));
     CudaCheckError();
 }
 
-__global__ void renderAll2DKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len, camera* d_cam,float radius,int *d_mutex,int ns,curandState* globalState)
+__global__ void renderPlaneKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int len, plane *d_plane,camera* d_cam,float radius,int *d_mutex,int ns,curandState* globalState)
 {
     curandState localState = globalState[threadIdx.x];
     const int pixel_index = blockIdx.x*blockDim.x+threadIdx.x;
@@ -53,7 +53,11 @@ __global__ void renderAll2DKernel(float *d_pixels,int nx,int ny,float3 *d_pc,int
             v=float(j+curand_uniform(&localState)-0.5)/float(ny);
         }
         ray r=d_cam->get_ray(u,v);
-        if(r.distance_to_pt(d_pc[pc_index])<=radius)
+        float3 intersect_pt;
+        if(!d_plane->intersects_with(r,intersect_pt))
+            continue;
+
+        if(length(intersect_pt-d_pc[pc_index])<=radius)
         {
             // printf("Hit!\n");
 

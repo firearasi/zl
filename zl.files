@@ -8,6 +8,7 @@ cuda_check_error.cu
 cuda_check_error.h
 main.cu
 main.h
+main3D.cu
 plane.cu
 plane.h
 ray.h
