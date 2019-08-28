@@ -18,4 +18,4 @@ test: main.exe
 	date
 	time "./main.exe"
 	date
-	okular pic.ppm
+	#okular pic.ppm

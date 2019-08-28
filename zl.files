@@ -13,6 +13,8 @@ main2D.cu
 main2D.h
 main3D.cu
 main3D.h
+main3ddata.cu
+main3ddata.h
 plane.cu
 plane.h
 ray.h
